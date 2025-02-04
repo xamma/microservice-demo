@@ -117,19 +117,39 @@ async def get_items():
     return items
 
 # PUT - Update one or more properties of an item by ID
-@app.put("/items/{item_id}", response_model=models.Item)
+@app.put("/items/{item_id}", response_model=dict)
 async def update_item(item_id: str, item: models.Item):
     logger.info("PUT item route called")
-    if item_id not in db:
-        logger.error("Error updating item")
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    doc = db[item_id]
-    doc.update(item.model_dump(exclude_unset=True))
-    db[item_id] = doc
-    item.id = item_id
-    logger.info(f"Item {item.name} with {item.id} updated.")
-    return item
+    to_update = item.model_dump(exclude_unset=True)
+    if app_settings.KAFKA_ENABLED == "true":
+        event_message = {
+            'action': 'update',
+            'data': {
+                'id': item_id,
+                'fields': to_update
+            }
+        }
+        kafka_service.send_message(app_settings.KAFKA_TOPIC, event_message)
+
+        logger.info(f"Update request for item_id {item_id} sent to Kafka topic {app_settings.KAFKA_TOPIC}")
+
+        resObj = {
+            "message": f"Update request sent to Kafka topic {app_settings.KAFKA_TOPIC}",
+            "status_code": 200
+        }
+        return resObj
+
+    else:
+        if item_id not in db:
+            logger.error("Error updating item")
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        doc = db[item_id]
+        doc.update(to_update)
+        db[item_id] = doc
+        item.id = item_id
+        logger.info(f"Item {item.name} with {item.id} updated.")
+        return item
 
 # DELETE - Delete an item by ID
 @app.delete("/items/{item_id}", status_code=204)

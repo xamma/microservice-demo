@@ -90,6 +90,24 @@ class KafkaConsumerService:
                     doc_id, doc_rev = self.db.save(item_data)
                     logger.info(f"Item {item_data['name']} saved to CouchDB with id {doc_id}")
 
+                if event['action'] == 'update':
+                    item_data = event['data']
+                    try:
+                        # Check if item exists
+                        if item_data['id'] in self.db:
+                            doc = self.db[item_data['id']]
+                            doc.update(item_data['fields'])
+                            self.db[item_data['id']] = doc
+                            logger.info(f"Item {item_data['id']} updated in CouchDB.")
+                        else:
+                            logger.error(f"Item with id {item_data['id']} does not exist, cannot update.")
+                    except couchdb.http.ResourceNotFound:
+                        # Item not in DB
+                        logger.error(f"Failed to update item with id {item_data['id']}: Item not found.")
+                    except Exception as e:
+                        # Everything else..
+                        logger.error(f"Error updating item {item_data['id']}: {e}")
+
                 if event['action'] == 'delete':
                     item_data = event['data']
                     try:
