@@ -5,6 +5,7 @@ import models
 import logging
 import couchdb
 import json
+import redis
 from api_producer import KafkaService
 
 #-Logging configuration----------------------------
@@ -51,6 +52,19 @@ if app_settings.KAFKA_ENABLED == "true":
 else:
     logger.info("Kafka integration disabled.")
 
+# Redis setup
+try:
+    redis_client = redis.Redis(
+        host=app_settings.REDIS_HOST,
+        port=app_settings.REDIS_PORT,
+        db=app_settings.REDIS_DB,
+        decode_responses=True
+    )
+    logger.info("Redis connection successful.")
+except:
+    logger.error("Connection to Redis failed.")
+
+
 # POST - Create an item
 @app.post("/items/", response_model=dict, status_code=201)
 async def create_item(item: models.Item):
@@ -90,6 +104,21 @@ async def create_item(item: models.Item):
 @app.get("/items/{item_id}", response_model=models.Item, status_code=200)
 async def get_item(item_id: str):
     logger.info("GET item route called")
+    # Check Redis cache first
+    cached_item = redis_client.get(f"item:{item_id}")
+    if cached_item:
+        # If item is found in cache, return it directly
+        logger.info(f"Cache hit for item {item_id}")
+        
+        try:
+            # Deserialize the cached JSON string into a Python dictionary
+            cached_item_dict = json.loads(cached_item)
+            # Validate and return the item using Pydantic's model_validate
+            return models.Item.model_validate(cached_item_dict)
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decoding cached JSON: {e}")
+            raise HTTPException(status_code=500, detail="Error processing cached data")
+
     # Retrieve an item from CouchDB by its document ID
     if item_id not in db:
         logger.info("Failed getting item by id")
@@ -98,7 +127,9 @@ async def get_item(item_id: str):
     doc = db[item_id]
     item = models.Item(**doc)
     item.id = item_id  # Attach the document ID to the item, we need this because couchDB default is _id not the one in the model
-    logger.info(f"Got item {item.name} with {item.id}.")
+
+    redis_client.setex(f"item:{item_id}", 60, item.model_dump_json())  # Cache for 1 hour (3600 seconds)
+    logger.info(f"Got item {item.name} with {item.id} and stored into cache.")
     return item
 
 # GET - Get all items

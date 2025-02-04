@@ -2,6 +2,6 @@ fastapi[standard]
 uvicorn
 pydantic
 couchdb
-# kafka-python-ng
 pydantic-settings
 confluent-kafka
+redis[hiredis]

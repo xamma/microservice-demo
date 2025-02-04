@@ -20,6 +20,9 @@ class AppSettings(BaseSettings):
     KAFKA_BROKER: str | None = "localhost:9092"
     KAFKA_TOPIC: str | None = "items-topic"
     KAFKA_GROUP_ID: str | None = "test-consumer-group"
+    REDIS_HOST: str | None = "localhost"
+    REDIS_PORT: int | None = 6379
+    REDIS_DB: int | None = 5
 
     class Config:
         env_file = ".env"
