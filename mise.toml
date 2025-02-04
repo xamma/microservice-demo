@@ -1,0 +1,49 @@
+[tools]
+python = "3.13"
+
+[tasks]
+setuplocaldbonly = '''
+echo "Setting up database"
+docker run -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -v couchdb_data:/opt/couchdb/data -d couchdb
+echo "Installing requirements"
+pip install -r ./src/requirements.txt
+echo "Starting backend API"
+fastapi dev ./src/main/main.py --port 8000
+'''
+
+setupfullstack = '''
+echo "Creating docker network"
+docker network create microservicedemo
+echo "Setting up database"
+docker run -p 5984:5984 --name=couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password -v couchdb_data:/opt/couchdb/data --network=microservicedemo -d couchdb
+echo "Setting up kafka"
+docker run -d --name=kafka -p 9092:9092 -p 9093:9093 -e KAFKA_NODE_ID=1 -e KAFKA_PROCESS_ROLES=broker,controller -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093 -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT -e KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092 -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 -e KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1 -e KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1 -e KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0  -e KAFKA_NUM_PARTITIONS=3 --network=microservicedemo apache/kafka
+echo "Building dockerimage for backend"
+docker build -t microservicedemo .
+echo "Setting up backend API"
+docker run -dp 8000:8000 --name=backend --network=microservicedemo -e DB_HOST=couchdb -e KAFKA_ENABLED=true -e KAFKA_BROKER=kafka:9092 microservicedemo
+echo "Building dockerimage for Consumer"
+docker build -t dbconsumer -f Dockerfile.consumer .
+echo "Setting up consumer.."
+docker run -d --name=consumer -e KAFKA_BROKER=kafka:9092 -e DB_HOST=couchdb --network microservicedemo dbconsumer
+'''
+
+setupk8s = '''
+echo "Applying manifests"
+kubectl apply -f ./k8s-manifests/
+'''
+
+teardown = '''
+echo "Removing local resources.."
+docker ps -q --filter "name=couchdb" | xargs -r docker kill && docker ps -aq --filter "name=couchdb" | xargs -r docker rm
+docker ps -q --filter "name=kafka" | xargs -r docker kill && docker ps -aq --filter "name=kafka" | xargs -r docker rm
+docker ps -q --filter "name=backend" | xargs -r docker kill && docker ps -aq --filter "name=backend" | xargs -r docker rm
+docker ps -q --filter "name=consumer" | xargs -r docker kill && docker ps -aq --filter "name=consumer" | xargs -r docker rm
+echo "Removing container network.."
+docker network rm microservicedemo
+'''
+
+buildapp = '''
+echo "Building app"
+docker build -t microservicedemo .
+'''
