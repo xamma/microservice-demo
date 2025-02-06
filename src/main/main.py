@@ -97,7 +97,7 @@ async def create_item(item: models.Item):
         doc_id, doc_rev = db.save(doc) # returns an documentID and revision, we update the Item with the documentID
         item.id = doc_id  # Add the CouchDB document ID
         logger.info(f"New item {item.name} created with id {item.id}")
-        return item
+        return item.model_dump()
 
 # GET - Get an Item by ID
 # The read is directly on the DB, with or without Kafka integration
@@ -144,7 +144,8 @@ async def get_items():
         item = models.Item(**doc)
         item.id = item_id  # Attach the document ID to the item, since its None in the model
         items.append(item)
-        logger.info("Served all items in the database.")
+        
+    logger.info("Served all items in the database.")
     return items
 
 # PUT - Update one or more properties of an item by ID

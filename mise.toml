@@ -25,7 +25,7 @@ docker run -d --name=kafka -p 9092:9092 -p 9093:9093 -e KAFKA_NODE_ID=1 -e KAFKA
 echo "Building dockerimage for backend"
 docker build -t microservicedemo .
 echo "Setting up backend API"
-docker run -dp 8000:8000 --name=backend --network=microservicedemo -e DB_HOST=couchdb -e KAFKA_ENABLED=true -e KAFKA_BROKER=kafka:9092 microservicedemo
+docker run -dp 8000:8000 --name=backend --network=microservicedemo -e DB_HOST=couchdb -e REDIS_HOST=redis -e KAFKA_ENABLED=true -e KAFKA_BROKER=kafka:9092 microservicedemo
 echo "Building dockerimage for Consumer"
 docker build -t dbconsumer -f Dockerfile.consumer .
 echo "Setting up consumer.."
@@ -43,6 +43,7 @@ docker ps -q --filter "name=couchdb" | xargs -r docker kill && docker ps -aq --f
 docker ps -q --filter "name=kafka" | xargs -r docker kill && docker ps -aq --filter "name=kafka" | xargs -r docker rm
 docker ps -q --filter "name=backend" | xargs -r docker kill && docker ps -aq --filter "name=backend" | xargs -r docker rm
 docker ps -q --filter "name=consumer" | xargs -r docker kill && docker ps -aq --filter "name=consumer" | xargs -r docker rm
+docker ps -q --filter "name=redis" | xargs -r docker kill && docker ps -aq --filter "name=redis" | xargs -r docker rm
 echo "Removing container network.."
 docker network rm microservicedemo
 '''

@@ -8,7 +8,7 @@ For read intensive stuff I've added an redis cache (WIP) to get load off the dat
 
 ## Preqrequisites
 - mise installed for easy setup (can also run everything one by one)
-- A working Kubernetes cluster with an Apache Kafka (if you want to use Kafka, which kinda is the point of this demo)
+- A working Kubernetes cluster with an Apache Kafka (if you want to use Kafka, which kinda is the point of this demo) and Redis/dragonflydb
 - Some knowledge of Docker & Kubernetes
 
 ## How to run locally
