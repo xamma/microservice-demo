@@ -1,18 +1,22 @@
 # Microservice Demo
-A demo for working with microservices.  
-Contains a backend RestAPI written with FastAPI, a couchDB No-SQL Database and a Kafka Pub-Sub.  
+
+***A demo for working with microservices in an event-driven approach.***  
+
+Contains a backend **RestAPI written with FastAPI**, a **couchDB No-SQL Database** , **Redis cache** and a **Kafka Pub-Sub**.  
 The API will act as the producer and sent events to a Kafka topic, when an item is created, updated or deleted.  
 The database consumer service will watch this topic and apply the according logic to the database.  
 
 For read intensive stuff I've added an redis cache (write-through) to get load off the database.  
 So every time there is a read miss on the cache, the cache will be immediately written with the data from the database.  
 
+![architecture](./assets/microservicedemo.drawio.png)
+
 ## Preqrequisites
 - mise installed for easy setup (can also run everything one by one)
-- A working Kubernetes cluster with an Apache Kafka (if you want to use Kafka, which kinda is the point of this demo) and Redis/dragonflydb
-- Some knowledge of Docker & Kubernetes
+- Some knowledge of Docker
+- If u want to run this on K8s: A working Kubernetes cluster with an Apache Kafka (if you want to use Kafka, which kinda is the point of this demo) and Redis/dragonflydb
 
-## How to run locally
+## How to run
 You need to have docker and python installed.  
 This app can be run with or without Kafka.  
 
