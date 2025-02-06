@@ -4,7 +4,8 @@ Contains a backend RestAPI written with FastAPI, a couchDB No-SQL Database and a
 The API will act as the producer and sent events to a Kafka topic, when an item is created, updated or deleted.  
 The database consumer service will watch this topic and apply the according logic to the database.  
 
-For read intensive stuff I've added an redis cache (WIP) to get load off the database.  
+For read intensive stuff I've added an redis cache (write-through) to get load off the database.  
+So every time there is a read miss on the cache, the cache will be immediately written with the data from the database.  
 
 ## Preqrequisites
 - mise installed for easy setup (can also run everything one by one)
@@ -15,7 +16,7 @@ For read intensive stuff I've added an redis cache (WIP) to get load off the dat
 You need to have docker and python installed.  
 This app can be run with or without Kafka.  
 
-### Without Kafka (DB only)
+### Without Kafka locally (DB + redis only)
 
 ```
 mise setuplocaldbonly
@@ -58,6 +59,8 @@ items-topic
 ```
 http://localhost:8080/docs
 http://127.0.0.1:5984/_utils
+docker logs <containername>
+docker exec -it <containername> sh
 ```
 
 ## Shutdown and remove resources
