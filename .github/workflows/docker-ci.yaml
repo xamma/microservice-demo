@@ -1,0 +1,51 @@
+name: docker-ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Build images'
+        type: choice
+        options:
+        - buildandpush
+  push:
+    branches: ['master']
+
+jobs:
+  buildandpush:
+
+    runs-on: ubuntu-latest
+    # permissions:
+    #   packages: write
+
+    steps:
+    - name: check out code repo
+      uses: actions/checkout@v4
+      with: 
+        repository: xamma/microservice-demo
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: master
+
+    - name: login to container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: build and push backend
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        tags: ghcr.io/xamma/msdemo-backend:latest
+
+    - name: build and push consumer service
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        file: ./Dockerfile.consumer
+        tags: ghcr.io/xamma/msdemo-consumer:latest 

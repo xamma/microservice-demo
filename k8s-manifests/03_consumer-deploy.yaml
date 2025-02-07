@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: db-consumer
+  name: db-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-consumer
+  template:
+    metadata:
+      labels:
+        app: db-consumer
+    spec:
+      containers:
+      - image: ghcr.io/xamma/msdemo-consumer:latest
+        name: msdemo-consumer
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        envFrom:
+          - configMapRef:
+              name: app-config
+          - secretRef:
+              name: app-secret
