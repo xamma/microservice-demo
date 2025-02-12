@@ -74,4 +74,11 @@ mise teardown
 ```
 
 ## How to run on Kubernetes
-tbd.
+Simple setup, the secret would ofc be an externalSecret if using this on Prod and pulled from a SecretStore.  
+Make sure a Kafka cluster, Redis and CouchDB is running on K8s to make this work.  
+```
+kustomize build k8s-manifests/ | k apply -n demodeploy -f -
+```
+
+## Notes
+The Dockerfile is not best-practice, I usually would use a distroless nonroot image to run the app but for demo purposes and looking inside the container I chose this approach..  

@@ -128,7 +128,7 @@ async def get_item(item_id: str):
     item = models.Item(**doc)
     item.id = item_id  # Attach the document ID to the item, we need this because couchDB default is _id not the one in the model
 
-    redis_client.setex(f"item:{item_id}", 60, item.model_dump_json())  # Cache for 1 hour (3600 seconds)
+    redis_client.setex(f"item:{item_id}", 60, item.model_dump_json())  # Cache for 60s to see somthing in the demo
     logger.info(f"Got item {item.name} with {item.id} and stored into cache.")
     return item
 
